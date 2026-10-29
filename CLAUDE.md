@@ -222,9 +222,37 @@ override any conflicting wording earlier in this file.
   explicit approval.
 
 ## 7. Status
-- Present in the repository: the report PDF and this file.
-- 2026-10-29: SGCC dataset **not present** in the working environment (blocker for
-  Phase 1, see D7).
-- Missing: dataset (to be placed in `data/raw/`), all 8 notebooks (the report says
-  early Notebook 01 cells were written, but they are not in the repository),
-  `README.md`, `requirements.txt`, `.gitignore`, folder structure.
+- Present in the repository: the report PDF, this file and `.gitignore`.
+- **Dataset (2026-10-29):** `data/raw/data.csv` (git-ignored, read-only, never
+  modified).
+  - Source: https://github.com/henryRDlab/ElectricityTheftDetection, commit `8db682e`.
+    The file is published by the authors of Zheng et al. 2018 as a split ZIP archive
+    (`data.zip` + `data.z01` + `data.z02`).
+  - The repository has no license file. Its README asks users to cite Zheng et al.,
+    IEEE TII 14(4):1606–1615, 2018, doi:10.1109/TII.2017.2785963.
+  - Integrity: CRC `0x2e8226b` matched the archive; size 175,194,613 bytes; SHA-256
+    `99f8fd315626b1f729a9a03a97cb52ed097ab4d43e5771e21554c9e0c369b9b7`.
+  - Note: `zip -s 0` and `unzip` fail on this split archive. Join the three parts in
+    order and inflate the single entry instead.
+- **Verified against the report: all reported facts match.**
+  - Shape 42,372 × 1,036 (`CONS_NO`, `FLAG` and 1,034 daily columns).
+  - 3,615 theft and 38,757 normal customers; no duplicate IDs.
+  - Dates run from 2014-01-01 to 2016-10-31 in text order; only 2016-09-18 is absent.
+  - Missing readings: 25.64% overall, 31.47% for theft and 25.10% for normal
+    customers. By year: 35.29% (2014), 35.99% (2015) and 1.62% (2016).
+  - The cross-customer median is 144 kWh on 2014-10-03, against 4.48 on the day
+    before; no other day exceeds 50 kWh.
+  - Maximum reading: 800,003.32 kWh, on 2014-10-10.
+  - Overall median reading: 4.59 kWh.
+  - Mean consumption scored as a theft predictor gives ROC-AUC 0.657 on the whole
+    dataset; higher mean means more likely theft.
+  - Theft customers occupy rows 0–3,614.
+- **Not in the report; handle in NB01/NB02:**
+  - 5 customers have no readings at all (3 theft, 2 normal).
+  - 1,014 customers share an identical reading pattern with at least one other
+    customer, forming 136 groups. 1,005 of these rows are only zeros/NaN, and 5 are
+    entirely NaN.
+  - 5 of the duplicate groups have conflicting labels.
+  - No negative readings.
+- Missing: all 8 notebooks (the earlier NB01 cells are unavailable, so NB01 will be
+  recreated per D8), `README.md`, `requirements.txt`.

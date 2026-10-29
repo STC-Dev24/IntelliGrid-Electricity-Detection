@@ -1,0 +1,7 @@
+# Raw and processed data are large and never committed
+data/raw/
+data/processed/
+
+# Jupyter / Python
+.ipynb_checkpoints/
+__pycache__/
