@@ -1,0 +1,12 @@
+,"Median, normal (train)","Median, theft (train)",ROC-AUC on its own (train)
+mean_kwh,5.4353,8.6887,0.653
+median_kwh,4.58,6.755,0.6174
+std_kwh,3.097,6.0028,0.707
+max_kwh,21.9,37.94,0.6974
+zero_ratio,0.0074,0.0042,0.4654
+missing_ratio,0.0949,0.2115,0.5679
+volatility,0.2396,0.2264,0.4647
+longest_zero_run_days,2.0,2.0,0.4649
+spike_frequency,0.002,0.0038,0.577
+drop_frequency,0.0131,0.0155,0.5379
+consumption_change,0.0226,0.1359,0.6159

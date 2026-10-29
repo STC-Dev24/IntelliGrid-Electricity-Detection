@@ -1,0 +1,12 @@
+feature,definition
+mean_kwh,Average daily reading (observed days)
+median_kwh,Median daily reading (observed days)
+std_kwh,"Standard deviation of daily readings, ddof=0 (observed days)"
+max_kwh,Largest daily reading (after the Notebook 02 cap)
+zero_ratio,Days reading exactly 0 / observed days
+missing_ratio,"Days without a reading / 1,033 possible days (equals Notebook 02 missing_ratio)"
+volatility,Mean |today - yesterday| over consecutive observed days / mean_kwh (0 if mean_kwh = 0)
+longest_zero_run_days,Longest run of consecutive observed days reading 0 (a missing day ends the run)
+spike_frequency,Comparable days with reading >= 3 x mean of previous 7 days / comparable days (0 if none)
+drop_frequency,Comparable days with reading <= 1/3 x mean of previous 7 days / comparable days (0 if none)
+consumption_change,(later-half mean - earlier-half mean) / (sum of both) over the customer's observed days (0 if both 0)

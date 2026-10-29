@@ -1,9 +1,29 @@
-# CLAUDE.md — IntelliGrid: Electricity Theft and Anomaly Detection
+# CLAUDE.md — MeterTrace: Electricity Theft Detection and Consumption Anomaly Analysis
 
-College Data Science project. The submitted report is
-`IntelliGrid Electricity Theft and Anomaly Detection (1).pdf` (repo root, 6 pages).
-**The report is the specification.** Follow its architecture; do not add models,
-features or steps it does not describe unless the team approves them first.
+College deep learning project. **Official name (from 2026-10-29): MeterTrace:
+Electricity Theft Detection and Consumption Anomaly Analysis.**
+
+- **Official scope:** `MeterTrace.pdf` (repo root, 6 pages), the proposal submitted to
+  the professor. In this file, "the report" means this proposal. Follow its
+  architecture; do not add models, features or steps it does not describe unless the
+  team approves them first.
+- **Earlier version:** `IntelliGrid Electricity Theft and Anomaly Detection (1).pdf` is
+  the first report, under the old working name. It has the same scope (dataset, five
+  models, eight stages, leakage rules, metrics) and is kept for history.
+- **Unchanged names:** the GitHub repository keeps its name
+  (`IntelliGrid-Electricity-Detection`). Notebooks 01–02 were approved with
+  "IntelliGrid" in their title cells and are not rebuilt; from Notebook 03 onwards,
+  titles use MeterTrace.
+
+### MeterTrace alignment check (2026-10-29)
+| Topic | MeterTrace.pdf | Status in this project |
+|---|---|---|
+| Dataset, labels, five models, eight stages | Same as the IntelliGrid report | Unchanged |
+| Workflow step "4. Sequence preparation" (weekly sequences) | Separate box in the workflow | Done in NB02 (`weekly_*.npz`); no extra notebook |
+| Split | Stratified, fixed seed, before fitting transformations | Done in NB02, also group-aware (D11) |
+| "System-wide glitch" on 3 Oct 2014 | Still described as a spike in the median | NB01 correction applies: a nearly empty day (15 readings, all theft); blanked (D9) |
+| Unsupervised models and labels | "Never train unsupervised models with labels"; autoencoder on normal customers only | Both unsupervised models train on *normal training customers* (D5), which is the same label use the proposal describes for the autoencoder |
+| Citation | Add the full Zheng et al. 2018 citation in the final submission | Citation recorded in Section 7 |
 
 ---
 
@@ -191,7 +211,7 @@ one needs.
 |---|---|---|---|---|
 | 01 | `01_Data_Understanding_EDA.ipynb` | Load, sort dates, profile missing values / zeros / outliers / imbalance / trends, glitch day, baseline floor (exploratory only) | `data/raw/` | `outputs/figures/01_*` (no modelling artefacts) |
 | 02 | `02_Data_Preprocessing.ipynb` | Sort dates, insert 18 Sep 2016, 3 Oct 2014 → NaN, record missingness, identical-history groups, group-aware stratified split (D9–D11), train-derived cap (D12), weekly aggregation + per-customer imputation (D13), log1p + train-fitted scaling (D14) | raw file | `data/processed/customers.csv`, `daily_clean.parquet`, `weekly_{train,validation,test}.npz`, `preprocessing_params.json`; `outputs/results/02_*` |
-| 03 | `03_Feature_Engineering.ipynb` | Per-customer features: mean, spread, zero-day ratio, longest zero run, sudden drops and spikes, volatility, change from own baseline, missing-reading ratio (D4) | NB02 outputs | `data/processed/features_{train,val,test}.parquet` |
+| 03 | `03_Feature_Engineering.ipynb` | 11 per-customer features from observed daily readings (D15) | `daily_clean.parquet`, `customers.csv`, `weekly_*.npz` (row order) | `data/processed/features_{train,validation,test}.parquet`, `features_metadata.json`; `outputs/results/03_*` |
 | 04 | `04_Classical_Baselines.ipynb` | LR + RF (supervised), Isolation Forest (unsupervised, normal training customers only, D5) on features; validation metrics only | NB03 features | `models/*.joblib`, validation scores |
 | 05 | `05_Deep_Learning_Models.ipynb` | LSTM on weekly sequences (labels); dense autoencoder on normal training customers; validation metrics only | NB02 sequences | `models/*.keras`, training histories, validation scores |
 | 06 | `06_Evaluation.ipynb` | Choose thresholds on validation (one rule per group), then score test **once**; all metrics + plots | all models, val/test data | `outputs/results/*.csv`, test scores, figures |
@@ -271,8 +291,25 @@ and the earlier NB01 recommendations:
 - Missing-ratio denominator: the 1,033 days that could have data (excludes
   2016-09-18 and 2014-10-03).
 
+Approved scope for Notebook 03 (2026-10-29):
+- **D15 — Features.** There are 11 row-wise features, computed from
+  `daily_clean.parquet` (capped, **not imputed**) after dropping 2014-10-03 and
+  2016-09-18:
+  - Level and spread: `mean_kwh`, `median_kwh`, `std_kwh` (ddof=0), `max_kwh`.
+  - Zeros and gaps: `zero_ratio`, `missing_ratio` (equals NB02), `longest_zero_run_days`
+    (a missing day ends the run).
+  - `volatility`: mean |Δ| over consecutive observed days ÷ `mean_kwh` (0 if the mean is 0).
+  - `spike_frequency` / `drop_frequency`: share of comparable days that are ≥ 3× / ≤ ⅓×
+    the mean of the previous 7 days. A day is comparable if it has a reading and that
+    mean uses ≥ 4 observed days and is ≥ 1 kWh. The frequency is 0 if no day is
+    comparable.
+  - `consumption_change`: (later − earlier) ÷ (later + earlier) over the halves of the
+    customer's observed days (0 if both are 0).
+  - Nothing is fitted. `FLAG` is stored as the last column, but models must select
+    inputs with `feature_columns` from `features_metadata.json`.
+
 ## 7. Status
-- Present in the repository: the report PDF, this file, `.gitignore`, Notebooks 01–02,
+- Present in the repository: both PDFs (MeterTrace.pdf is official), this file, `.gitignore`, Notebooks 01–02,
   their figures, and `outputs/results/02_*`.
 - **Dataset (2026-10-29):** `data/raw/data.csv` (git-ignored, read-only, never
   modified).
@@ -327,7 +364,7 @@ and the earlier NB01 recommendations:
   - Exploratory whole-dataset ROC-AUC of average consumption: 0.6566.
   - NB01 recommended dropping identical/contradictory groups before the split. The
     team chose group-aware splitting instead (D10, D11).
-- **NB02 complete (2026-10-29), awaiting team approval.**
+- **NB02 approved by the team (2026-10-29).**
   `notebooks/02_Data_Preprocessing.ipynb` executed end to end in about 60 seconds.
   - Excluded: the 5 customers with no readings (3 theft, 2 normal).
   - Train: 29,657 customers, 2,530 theft (8.53%).
@@ -341,7 +378,19 @@ and the earlier NB01 recommendations:
   - 148 weeks; 24.32% of weekly values imputed; log1p mean/std = 1.6018 / 1.1036.
   - **Later notebooks must load `data/processed/customers.csv` (the split) and
     `preprocessing_params.json`; never re-split or refit these.**
-- Missing: notebooks 03–08, `README.md`, `requirements.txt`.
+- **NB03 complete (2026-10-29), awaiting team approval.**
+  `notebooks/03_Feature_Engineering.ipynb` executed end to end in about 30 seconds.
+  - Shapes: `features_train` 29,657 × 12, `features_validation` 6,354 × 12,
+    `features_test` 6,356 × 12 (11 features + `FLAG`).
+  - The row order matches `weekly_*.npz`. There are 0 NaN and 0 infinite values, and
+    all alignment checks pass.
+  - Edge cases: 2,109 customers have `mean_kwh` = 0 (their volatility is set to 0);
+    4,076 have no comparable day (spike and drop frequencies set to 0).
+  - Single-feature ROC-AUC on train (exploratory): `std_kwh` 0.707, `max_kwh` 0.697,
+    `mean_kwh` 0.653, `consumption_change` 0.616.
+  - Highly overlapping pairs: `zero_ratio` / `longest_zero_run_days` (Spearman 0.98),
+    `mean_kwh` / `median_kwh` (0.96), `std_kwh` / `max_kwh` (0.95).
+- Missing: notebooks 04–08, `README.md`, `requirements.txt`.
 - Outputs folder: figures go to `outputs/figures/`, metric tables to
   `outputs/results/`. Notebook file names use the `NN_Title_Case.ipynb` style
   (Section 4).
