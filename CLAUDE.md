@@ -216,7 +216,7 @@ one needs.
 | 05 | `05_Deep_Learning_Models.ipynb` | LSTM on weekly sequences (labels); dense autoencoder on normal training customers (D17); validation metrics only; **test file not loaded** | `weekly_{train,validation}.npz`, `preprocessing_params.json`, `04_validation_*.csv` | `models/*.keras` (git-ignored), `outputs/results/05_validation_scores.csv`, `05_validation_metrics.csv`, `05_*_history.csv` |
 | 06 | `06_Model_Evaluation.ipynb` | Thresholds = max validation F1 for every model (D18), frozen to file, then test scored **once**; all metrics + plots | saved models, `04/05_validation_scores.csv`, `features_*.parquet`, `weekly_*.npz` | `outputs/results/06_validation_thresholds.csv`, `06_test_metrics.csv`, `06_test_scores.csv`; `outputs/figures/06_*` |
 | 07 | `07_Model_Explainability.ipynb` | Random Forest only (D19): built-in importance, SHAP TreeExplainer (1,000-customer test sample), 3 local explanations, limitations; nothing refitted | `random_forest.joblib`, `features_{train,test}.parquet`, `06_test_scores.csv`, `06_validation_thresholds.csv`, `daily_clean.parquet` | `outputs/figures/07_*`, `outputs/results/07_feature_importance.csv`, `07_local_explanations.csv` |
-| 08 | `08_Interactive_Demo.ipynb` | Investigation view: choose a test customer → consumption, theft probability, anomaly score, unusual periods (saved models only, no retraining) | saved models + scores | none |
+| 08 | `08_Interactive_Customer_Investigation.ipynb` | Investigation view (D20): ipywidgets selection (no callbacks) → summary, daily history (missing vs zero, spikes/drops, near-zero runs), RF SHAP for that customer, all five saved scores, autoencoder week-by-week error with imputed weeks marked; read-only | `random_forest.joblib`, `dense_autoencoder.keras`, `daily_clean.parquet`, `features_{train,test}.parquet`, `weekly_test.npz`, `06_*.csv`, `07_local_explanations.csv` | `outputs/figures/08_demo_*` (default example only) |
 
 Planned repository layout:
 ```
@@ -356,6 +356,23 @@ Approved scope for Notebook 07 (2026-10-29):
   - The autoencoder reconstruction-error breakdown by period, planned for NB07 in the
     original contract, is left to NB08's "unusual periods" view.
 
+Approved scope for Notebook 08 (2026-10-29):
+- **D20 — Investigation notebook.**
+  - **Selection without callbacks:** an ipywidgets `Dropdown` (3 NB07 example customers,
+    the RF top-10, "Enter a customer ID below") plus a `Text` box (full ID or unique
+    prefix, case-insensitive). The widgets only hold the choice; the Step 2 cells read
+    `.value` when they are run. There is no `.observe`, `interact` or `on_click`. If the
+    typed ID matches 0 or several customers, the notebook falls back to the "Correctly
+    flagged theft" example and says so.
+  - **Daily history:** uses Notebook 03's spike/drop rule on the same days, and a check
+    confirms it reproduces the saved features. The near-zero shading (< 0.5 kWh for
+    ≥ 14 consecutive observed days) is a display aid only.
+  - **Model explanation and scores:** SHAP is computed for the selected customer only.
+    All five models' saved scores are shown with their own frozen thresholds and the
+    share of test customers scored higher.
+  - **Autoencoder view:** a week-by-week squared error (its mean equals the saved
+    score), with imputed weeks in grey. Labelled exploratory, not theft dates.
+
 ## 7. Status
 - Present in the repository: both PDFs (MeterTrace.pdf is official), this file, `.gitignore`, Notebooks 01–02,
   their figures, and `outputs/results/02_*`.
@@ -467,14 +484,21 @@ Approved scope for Notebook 07 (2026-10-29):
   - Dense autoencoder: 0.6540 / 0.1740 / 0.2160 / 0.1299 / 0.41 / 0.234
   - Isolation Forest: 0.6031 / 0.1549 / 0.1837 / 0.4135 / 0.40 / 0.168
   - Average consumption alone: 0.6695 / 0.2033 / 0.2474 / 0.0786 / 0.44 / 0.246
-- **NB07 complete (2026-10-29), awaiting team approval.**
+- **NB07 approved by the team (2026-10-29).**
   - Top 5 features (built-in importance): `std_kwh` 0.1413, `max_kwh` 0.1294,
     `consumption_change` 0.1227, `missing_ratio` 0.1064, `mean_kwh` 0.0952. The SHAP
     top 5 is the same set.
   - SHAP runtime is about 83 s for 1,000 customers. Contradictory-group test customers:
     0 of 91 flagged.
-- Missing: notebook 08, `README.md`, `requirements.txt`. The local environment also
-  needed `shap` and `ipywidgets` (both preinstalled on Colab).
+- **NB08 complete (2026-10-29), awaiting team approval.**
+  `notebooks/08_Interactive_Customer_Investigation.ipynb` executes top to bottom in
+  about 10 s with the default example.
+  - Verified with copies run for the false-alarm and missed-theft examples, top-10
+    rank 1, a typed lowercase prefix, an unmatched ID and an ambiguous prefix. All
+    checks printed True, with no errors.
+  - Notebook 06 result files are byte-identical (SHA-256) before and after.
+- Missing: `README.md`, `requirements.txt` (final project review pending). The local
+  environment also needed `shap` and `ipywidgets` (both preinstalled on Colab).
 - Outputs folder: figures go to `outputs/figures/`, metric tables to
   `outputs/results/`. Notebook file names use the `NN_Title_Case.ipynb` style
   (Section 4).
