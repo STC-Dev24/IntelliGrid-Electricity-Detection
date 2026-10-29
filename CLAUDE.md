@@ -374,8 +374,8 @@ Approved scope for Notebook 08 (2026-10-29):
     score), with imputed weeks in grey. Labelled exploratory, not theft dates.
 
 ## 7. Status
-- Present in the repository: both PDFs (MeterTrace.pdf is official), this file, `.gitignore`, Notebooks 01–02,
-  their figures, and `outputs/results/02_*`.
+- Present in the repository: both PDFs (MeterTrace.pdf is official), this file, `README.md`,
+  `requirements.txt`, `.gitignore`, Notebooks 01–08, `outputs/figures/` and `outputs/results/`.
 - **Dataset (2026-10-29):** `data/raw/data.csv` (git-ignored, read-only, never
   modified).
   - Source: https://github.com/henryRDlab/ElectricityTheftDetection, commit `8db682e`.
@@ -490,15 +490,16 @@ Approved scope for Notebook 08 (2026-10-29):
     top 5 is the same set.
   - SHAP runtime is about 83 s for 1,000 customers. Contradictory-group test customers:
     0 of 91 flagged.
-- **NB08 complete (2026-10-29), awaiting team approval.**
+- **NB08 approved by the team (2026-10-29).**
   `notebooks/08_Interactive_Customer_Investigation.ipynb` executes top to bottom in
   about 10 s with the default example.
   - Verified with copies run for the false-alarm and missed-theft examples, top-10
     rank 1, a typed lowercase prefix, an unmatched ID and an ambiguous prefix. All
     checks printed True, with no errors.
   - Notebook 06 result files are byte-identical (SHA-256) before and after.
-- Missing: `README.md`, `requirements.txt` (final project review pending). The local
-  environment also needed `shap` and `ipywidgets` (both preinstalled on Colab).
+- **Final review (2026-10-29), in progress:** `README.md` and `requirements.txt` added.
+  Notebook 01–02 title cells were renamed to MeterTrace (markdown only). A fresh-clone
+  reproduction test is running.
 - Outputs folder: figures go to `outputs/figures/`, metric tables to
   `outputs/results/`. Notebook file names use the `NN_Title_Case.ipynb` style
   (Section 4).
