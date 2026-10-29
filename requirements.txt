@@ -1,0 +1,13 @@
+# MeterTrace: Python packages used by the eight notebooks.
+# Tested with Python 3.13 on Linux, CPU only. These exact versions reproduced the
+# committed results; newer versions will probably work but may change numbers slightly.
+pandas==3.1.0
+numpy==2.5.4
+pyarrow==26.0.0        # .parquet files (Notebooks 02, 03, 06, 07, 08)
+matplotlib==3.11.2
+scikit-learn==1.9.1
+joblib==1.6.0          # saving scikit-learn models (Notebooks 04, 06, 07, 08)
+tensorflow==2.21.0     # includes Keras 3 for the LSTM and autoencoder (Notebooks 05, 06, 08)
+shap==0.54.1           # Random Forest explanations (Notebooks 07, 08)
+ipywidgets==8.1.9      # customer selection (Notebook 08)
+notebook               # Jupyter, to open and run the notebooks
