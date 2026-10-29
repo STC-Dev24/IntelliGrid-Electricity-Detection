@@ -213,7 +213,7 @@ one needs.
 | 02 | `02_Data_Preprocessing.ipynb` | Sort dates, insert 18 Sep 2016, 3 Oct 2014 → NaN, record missingness, identical-history groups, group-aware stratified split (D9–D11), train-derived cap (D12), weekly aggregation + per-customer imputation (D13), log1p + train-fitted scaling (D14) | raw file | `data/processed/customers.csv`, `daily_clean.parquet`, `weekly_{train,validation,test}.npz`, `preprocessing_params.json`; `outputs/results/02_*` |
 | 03 | `03_Feature_Engineering.ipynb` | 11 per-customer features from observed daily readings (D15) | `daily_clean.parquet`, `customers.csv`, `weekly_*.npz` (row order) | `data/processed/features_{train,validation,test}.parquet`, `features_metadata.json`; `outputs/results/03_*` |
 | 04 | `04_Machine_Learning_Baselines.ipynb` | LR + RF (supervised), Isolation Forest (unsupervised, normal training customers only, D5) on the 11 features (D16); validation metrics only; **test file not loaded** | `features_{train,validation}.parquet`, `features_metadata.json` | `models/*.joblib` (git-ignored), `outputs/results/04_validation_scores.csv`, `04_validation_metrics.csv`, `04_logistic_regression_coefficients.csv` |
-| 05 | `05_Deep_Learning_Models.ipynb` | LSTM on weekly sequences (labels); dense autoencoder on normal training customers; validation metrics only | NB02 sequences | `models/*.keras`, training histories, validation scores |
+| 05 | `05_Deep_Learning_Models.ipynb` | LSTM on weekly sequences (labels); dense autoencoder on normal training customers (D17); validation metrics only; **test file not loaded** | `weekly_{train,validation}.npz`, `preprocessing_params.json`, `04_validation_*.csv` | `models/*.keras` (git-ignored), `outputs/results/05_validation_scores.csv`, `05_validation_metrics.csv`, `05_*_history.csv` |
 | 06 | `06_Evaluation.ipynb` | Choose thresholds on validation (one rule per group), then score test **once**; all metrics + plots | all models, val/test data | `outputs/results/*.csv`, test scores, figures |
 | 07 | `07_Explainability_Risk.ipynb` | RF feature importance + SHAP; autoencoder reconstruction-error breakdown by period; flagged customers' histories | saved models + scores | figures, risk table |
 | 08 | `08_Interactive_Demo.ipynb` | Investigation view: choose a test customer → consumption, theft probability, anomaly score, unusual periods (saved models only, no retraining) | saved models + scores | none |
@@ -320,6 +320,19 @@ Approved scope for Notebook 04 (2026-10-29):
   - No hyperparameter search and no thresholds. Notebook 06 loads the saved models,
     picks thresholds on `04_validation_scores.csv`, and scores the test set once.
 
+Approved scope for Notebook 05 (2026-10-29):
+- **D17 — Deep models** (TensorFlow/Keras, CPU; seeds plus
+  `tf.config.experimental.enable_op_determinism()`, which made runs identical).
+  - LSTM: `Input(148,1) → LSTM(32) → Dropout(0.2) → Dense(1, sigmoid)`;
+    binary cross-entropy; Adam (learning rate 1e-3); `"balanced"` class weights from
+    training labels (0.547 / 5.861).
+  - Autoencoder: `148 → Dense(64, relu) → Dense(16, relu) → Dense(64, relu) →
+    Dense(148, linear)`; MSE loss; trained on normal training customers. Anomaly
+    score = per-customer mean squared reconstruction error.
+  - Both: at most 15 epochs, batch size 256, `EarlyStopping(val_loss, patience=3,
+    restore_best_weights=True)`. The autoencoder's validation data is normal
+    validation customers only. `TF_CPP_MIN_LOG_LEVEL=3`.
+
 ## 7. Status
 - Present in the repository: both PDFs (MeterTrace.pdf is official), this file, `.gitignore`, Notebooks 01–02,
   their figures, and `outputs/results/02_*`.
@@ -403,7 +416,7 @@ Approved scope for Notebook 04 (2026-10-29):
   - Highly overlapping pairs: `zero_ratio` / `longest_zero_run_days` (Spearman 0.98),
     `mean_kwh` / `median_kwh` (0.96), `std_kwh` / `max_kwh` (0.95).
 - **NB03 approved by the team (2026-10-29).**
-- **NB04 complete (2026-10-29), awaiting team approval.**
+- **NB04 approved by the team (2026-10-29).**
   `notebooks/04_Machine_Learning_Baselines.ipynb` executed end to end with no
   warnings; the test file was not loaded. Validation results:
   - Logistic Regression: ROC-AUC 0.7216, PR-AUC 0.2377 (train ROC-AUC 0.7310).
@@ -413,7 +426,17 @@ Approved scope for Notebook 04 (2026-10-29):
     0.5 / 0.0850.
   - Models are in `models/` (git-ignored; re-run NB04 to recreate them). The Random
     Forest file is about 10 MB.
-- Missing: notebooks 05–08, `README.md`, `requirements.txt`.
+- **NB05 complete (2026-10-29), awaiting team approval.**
+  `notebooks/05_Deep_Learning_Models.ipynb` ran with TensorFlow 2.21.0 / Keras 3.15.1
+  on 4 CPU cores (no GPU). Validation results:
+  - LSTM: 9 epochs (best epoch 6), about 1 minute; ROC-AUC 0.6925, PR-AUC 0.2043.
+    It does **not** beat LR or RF.
+  - Autoencoder: 15 epochs (best epoch 15), about 6 s; ROC-AUC 0.6321, PR-AUC 0.1539.
+    It **does** beat Isolation Forest.
+  - Both are below "average consumption alone" on PR-AUC; the LSTM is slightly above it
+    on ROC-AUC.
+  - Only TensorFlow's import notices appear on stderr.
+- Missing: notebooks 06–08, `README.md`, `requirements.txt`.
 - Outputs folder: figures go to `outputs/figures/`, metric tables to
   `outputs/results/`. Notebook file names use the `NN_Title_Case.ipynb` style
   (Section 4).
