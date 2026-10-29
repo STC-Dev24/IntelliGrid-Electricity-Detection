@@ -1,0 +1,5 @@
+split,Customers,Theft,Normal,Share of customers (%),Theft share (%),Customers in contradictory groups,Customers sharing a history
+train,29657,2530,27127,69.99,8.53,401,793
+validation,6354,540,5814,15.0,8.5,0,92
+test,6356,542,5814,15.0,8.53,91,124
+excluded (no readings),5,3,2,0.01,60.0,5,0

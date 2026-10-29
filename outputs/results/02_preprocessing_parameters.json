@@ -1,0 +1,22 @@
+{
+  "random_state": 42,
+  "first_date": "2014-01-01",
+  "last_date": "2016-10-31",
+  "n_days": 1035,
+  "inserted_absent_date": "2016-09-18",
+  "blanked_glitch_date": "2014-10-03",
+  "n_possible_days_for_missing_ratio": 1033,
+  "split_method": "StratifiedGroupKFold(n_splits=20, shuffle=True, random_state=42) on customers with readings, groups = identical daily histories; folds 0-2 test, folds 3-5 validation, rest train",
+  "excluded_customers": "customers with no readings (split = 'excluded (no readings)')",
+  "contradictory_label_policy": "keep original labels; each identical-history group stays in one split; flagged in customers.csv",
+  "cap_percentile_of_training_readings": 99.99,
+  "cap_value_kwh_per_day": 2112.0,
+  "days_per_week": 7,
+  "n_weeks": 148,
+  "weekly_value": "mean of observed (capped) days in each 7-day block starting on first_date; last block has fewer days",
+  "weekly_imputation": "per customer: linear interpolation inside, then bfill, then ffill (no cross-customer statistics)",
+  "log_transform": "log1p",
+  "log_train_mean": 1.601755,
+  "log_train_std": 1.103571,
+  "scaling_formula": "(log1p(weekly_kwh) - log_train_mean) / log_train_std"
+}

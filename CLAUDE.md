@@ -190,7 +190,7 @@ one needs.
 | NB | File | Does | Reads | Writes |
 |---|---|---|---|---|
 | 01 | `01_Data_Understanding_EDA.ipynb` | Load, sort dates, profile missing values / zeros / outliers / imbalance / trends, glitch day, baseline floor (exploratory only) | `data/raw/` | `outputs/figures/01_*` (no modelling artefacts) |
-| 02 | `02_Preprocessing.ipynb` | Fix column order (insert 18 Sep 2016 as NaN), glitch → NaN, stratified customer split, train-derived caps if justified (D2), interpolate short gaps, train-fitted imputer, weekly aggregation, train-fitted scaling | raw file | `data/processed/` cleaned daily matrix, split IDs, weekly sequences per split, fitted imputer/scaler (`models/preprocessing/`) |
+| 02 | `02_Data_Preprocessing.ipynb` | Sort dates, insert 18 Sep 2016, 3 Oct 2014 → NaN, record missingness, identical-history groups, group-aware stratified split (D9–D11), train-derived cap (D12), weekly aggregation + per-customer imputation (D13), log1p + train-fitted scaling (D14) | raw file | `data/processed/customers.csv`, `daily_clean.parquet`, `weekly_{train,validation,test}.npz`, `preprocessing_params.json`; `outputs/results/02_*` |
 | 03 | `03_Feature_Engineering.ipynb` | Per-customer features: mean, spread, zero-day ratio, longest zero run, sudden drops and spikes, volatility, change from own baseline, missing-reading ratio (D4) | NB02 outputs | `data/processed/features_{train,val,test}.parquet` |
 | 04 | `04_Classical_Baselines.ipynb` | LR + RF (supervised), Isolation Forest (unsupervised, normal training customers only, D5) on features; validation metrics only | NB03 features | `models/*.joblib`, validation scores |
 | 05 | `05_Deep_Learning_Models.ipynb` | LSTM on weekly sequences (labels); dense autoencoder on normal training customers; validation metrics only | NB02 sequences | `models/*.keras`, training histories, validation scores |
@@ -249,8 +249,31 @@ override any conflicting wording earlier in this file.
 - **Branching.** Work on the feature branch; do not modify or merge `main` without
   explicit approval.
 
+Approved for Notebook 02 (2026-10-29). These override the NB02 wording in Section 4
+and the earlier NB01 recommendations:
+- **D9 — Calendar.** Sort dates, insert 18 Sep 2016 as NaN, and set 3 Oct 2014 to
+  NaN for every customer *before* computing any indicator or feature.
+- **D10 — Empty customers.** Keep the 5 no-reading customers in `customers.csv` with
+  `split = "excluded (no readings)"`. They are not in any model-ready file.
+- **D11 — Identical histories and contradictory labels.** Delete nothing. Keep the
+  original labels, flag `in_contradictory_group`, and put each identical-history group
+  in exactly one split. The split is `StratifiedGroupKFold(n_splits=20, shuffle=True,
+  random_state=42)`: folds 0–2 test, 3–5 validation, 6–19 train.
+- **D12 — Cap.** Cap at the 99.99th percentile of *training* readings and apply the
+  same value to every split.
+- **D13 — Imputation.** Daily data is **not imputed** (NaN = missing indicator).
+  Weekly value = mean of observed days in each 7-day block (148 blocks). Empty weeks
+  are filled per customer: linear interpolation inside, then `bfill`, then `ffill`.
+  No cross-customer statistics are used, so no imputer is fitted. A weekly observed
+  fraction is saved alongside.
+- **D14 — Scaling.** `(log1p(weekly) − train_mean) / train_std`, with one global mean
+  and std from training customers.
+- Missing-ratio denominator: the 1,033 days that could have data (excludes
+  2016-09-18 and 2014-10-03).
+
 ## 7. Status
-- Present in the repository: the report PDF, this file, `.gitignore`, Notebook 01 and its figures.
+- Present in the repository: the report PDF, this file, `.gitignore`, Notebooks 01–02,
+  their figures, and `outputs/results/02_*`.
 - **Dataset (2026-10-29):** `data/raw/data.csv` (git-ignored, read-only, never
   modified).
   - Source: https://github.com/henryRDlab/ElectricityTheftDetection, commit `8db682e`.
@@ -283,7 +306,7 @@ override any conflicting wording earlier in this file.
     entirely NaN.
   - 5 of the duplicate groups have conflicting labels.
   - No negative readings.
-- **NB01 complete (2026-10-29), awaiting team approval.**
+- **NB01 approved by the team (2026-10-29).**
   `notebooks/01_Data_Understanding_EDA.ipynb` was recreated per D8 and executed
   end to end, with figures in `outputs/figures/01_*.png`. It ran identically under
   pandas 3.1 and pandas 2.2 (Colab). Key findings:
@@ -302,11 +325,23 @@ override any conflicting wording earlier in this file.
   - Extreme readings are mostly isolated spikes; the whole-dataset 99.99th percentile
     is 1,954.05 kWh. Some genuinely large consumers exist.
   - Exploratory whole-dataset ROC-AUC of average consumption: 0.6566.
-  - Recommended (counted, not applied) for NB02: drop the 5 empty customers, drop the
-    5 contradictory-label groups, and keep one copy per remaining identical group,
-    all before the split. That gives 41,489 customers (3,597 theft, 37,892 normal).
-    **These are proposals, not approved decisions.**
-- Missing: notebooks 02–08, `README.md`, `requirements.txt`.
+  - NB01 recommended dropping identical/contradictory groups before the split. The
+    team chose group-aware splitting instead (D10, D11).
+- **NB02 complete (2026-10-29), awaiting team approval.**
+  `notebooks/02_Data_Preprocessing.ipynb` executed end to end in about 60 seconds.
+  - Excluded: the 5 customers with no readings (3 theft, 2 normal).
+  - Train: 29,657 customers, 2,530 theft (8.53%).
+  - Validation: 6,354 customers, 540 theft (8.50%).
+  - Test: 6,356 customers, 542 theft (8.53%).
+  - 0 identical-history groups cross splits.
+  - 497 customers sit in 5 contradictory groups (all with zero or no consumption); they
+    are kept and flagged. 91 of them are in test, 0 in validation.
+  - Cap = 2,112.00 kWh/day (training 99.99th percentile). It touches 2,274 train
+    readings (181 customers); 4 train customers have a median day above the cap.
+  - 148 weeks; 24.32% of weekly values imputed; log1p mean/std = 1.6018 / 1.1036.
+  - **Later notebooks must load `data/processed/customers.csv` (the split) and
+    `preprocessing_params.json`; never re-split or refit these.**
+- Missing: notebooks 03–08, `README.md`, `requirements.txt`.
 - Outputs folder: figures go to `outputs/figures/`, metric tables to
   `outputs/results/`. Notebook file names use the `NN_Title_Case.ipynb` style
   (Section 4).
