@@ -215,7 +215,7 @@ one needs.
 | 04 | `04_Machine_Learning_Baselines.ipynb` | LR + RF (supervised), Isolation Forest (unsupervised, normal training customers only, D5) on the 11 features (D16); validation metrics only; **test file not loaded** | `features_{train,validation}.parquet`, `features_metadata.json` | `models/*.joblib` (git-ignored), `outputs/results/04_validation_scores.csv`, `04_validation_metrics.csv`, `04_logistic_regression_coefficients.csv` |
 | 05 | `05_Deep_Learning_Models.ipynb` | LSTM on weekly sequences (labels); dense autoencoder on normal training customers (D17); validation metrics only; **test file not loaded** | `weekly_{train,validation}.npz`, `preprocessing_params.json`, `04_validation_*.csv` | `models/*.keras` (git-ignored), `outputs/results/05_validation_scores.csv`, `05_validation_metrics.csv`, `05_*_history.csv` |
 | 06 | `06_Model_Evaluation.ipynb` | Thresholds = max validation F1 for every model (D18), frozen to file, then test scored **once**; all metrics + plots | saved models, `04/05_validation_scores.csv`, `features_*.parquet`, `weekly_*.npz` | `outputs/results/06_validation_thresholds.csv`, `06_test_metrics.csv`, `06_test_scores.csv`; `outputs/figures/06_*` |
-| 07 | `07_Explainability_Risk.ipynb` | RF feature importance + SHAP; autoencoder reconstruction-error breakdown by period; flagged customers' histories | saved models + scores | figures, risk table |
+| 07 | `07_Model_Explainability.ipynb` | Random Forest only (D19): built-in importance, SHAP TreeExplainer (1,000-customer test sample), 3 local explanations, limitations; nothing refitted | `random_forest.joblib`, `features_{train,test}.parquet`, `06_test_scores.csv`, `06_validation_thresholds.csv`, `daily_clean.parquet` | `outputs/figures/07_*`, `outputs/results/07_feature_importance.csv`, `07_local_explanations.csv` |
 | 08 | `08_Interactive_Demo.ipynb` | Investigation view: choose a test customer → consumption, theft probability, anomaly score, unusual periods (saved models only, no retraining) | saved models + scores | none |
 
 Planned repository layout:
@@ -344,6 +344,18 @@ Approved scope for Notebook 06 (2026-10-29):
     tie-break; only Random Forest has ties (P@100 0.68–0.69).
   - **No model, threshold or setting may be changed after these test results.**
 
+Approved scope for Notebook 07 (2026-10-29):
+- **D19 — Explainability (Random Forest only).**
+  - Built-in impurity importance, plus SHAP 0.54.1 `TreeExplainer` (tree-path-dependent,
+    nothing fitted). The global summary uses a random sample of 1,000 test customers
+    (`default_rng(42)`), because SHAP takes about 0.08 s per customer.
+  - SHAP output is (customers, features, 2); index 1 = theft. The base value is 0.5
+    because of the balanced class weights.
+  - Three local examples (TP / FP / FN at the frozen threshold 0.25), each the customer
+    whose score is closest to its group's median (ties broken by saved order).
+  - The autoencoder reconstruction-error breakdown by period, planned for NB07 in the
+    original contract, is left to NB08's "unusual periods" view.
+
 ## 7. Status
 - Present in the repository: both PDFs (MeterTrace.pdf is official), this file, `.gitignore`, Notebooks 01–02,
   their figures, and `outputs/results/02_*`.
@@ -447,7 +459,7 @@ Approved scope for Notebook 06 (2026-10-29):
   - Both are below "average consumption alone" on PR-AUC; the LSTM is slightly above it
     on ROC-AUC.
   - Only TensorFlow's import notices appear on stderr.
-- **NB06 complete (2026-10-29), awaiting team approval.** Final test results (6,356
+- **NB06 approved by the team (2026-10-29).** Final test results (6,356
   customers, 542 theft), as ROC-AUC / PR-AUC / F1 / FPR / P@100 / P@500:
   - Random Forest: 0.7702 / 0.3389 / 0.3691 / 0.0413 / 0.68 / 0.380 (**best**)
   - Logistic Regression: 0.7456 / 0.2539 / 0.2902 / 0.1297 / 0.51 / 0.292
@@ -455,7 +467,14 @@ Approved scope for Notebook 06 (2026-10-29):
   - Dense autoencoder: 0.6540 / 0.1740 / 0.2160 / 0.1299 / 0.41 / 0.234
   - Isolation Forest: 0.6031 / 0.1549 / 0.1837 / 0.4135 / 0.40 / 0.168
   - Average consumption alone: 0.6695 / 0.2033 / 0.2474 / 0.0786 / 0.44 / 0.246
-- Missing: notebooks 07–08, `README.md`, `requirements.txt`.
+- **NB07 complete (2026-10-29), awaiting team approval.**
+  - Top 5 features (built-in importance): `std_kwh` 0.1413, `max_kwh` 0.1294,
+    `consumption_change` 0.1227, `missing_ratio` 0.1064, `mean_kwh` 0.0952. The SHAP
+    top 5 is the same set.
+  - SHAP runtime is about 83 s for 1,000 customers. Contradictory-group test customers:
+    0 of 91 flagged.
+- Missing: notebook 08, `README.md`, `requirements.txt`. The local environment also
+  needed `shap` and `ipywidgets` (both preinstalled on Colab).
 - Outputs folder: figures go to `outputs/figures/`, metric tables to
   `outputs/results/`. Notebook file names use the `NN_Title_Case.ipynb` style
   (Section 4).

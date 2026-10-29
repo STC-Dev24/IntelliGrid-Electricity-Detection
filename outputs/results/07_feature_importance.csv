@@ -1,0 +1,12 @@
+,Impurity importance,Impurity rank,"Mean |SHAP| (1,000 test customers)",SHAP rank
+std_kwh,0.1413,1,0.0625,1
+consumption_change,0.1227,3,0.0582,2
+max_kwh,0.1294,2,0.0568,3
+missing_ratio,0.1064,4,0.0481,4
+mean_kwh,0.0952,5,0.0431,5
+volatility,0.0905,6,0.0408,6
+median_kwh,0.0781,7,0.0342,7
+drop_frequency,0.074,8,0.0331,8
+spike_frequency,0.0608,9,0.0283,9
+zero_ratio,0.0545,10,0.0244,10
+longest_zero_run_days,0.047,11,0.0201,11
