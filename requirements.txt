@@ -10,4 +10,4 @@ joblib==1.6.0          # saving scikit-learn models (Notebooks 04, 06, 07, 08)
 tensorflow==2.21.0     # includes Keras 3 for the LSTM and autoencoder (Notebooks 05, 06, 08)
 shap==0.54.1           # Random Forest explanations (Notebooks 07, 08)
 ipywidgets==8.1.9      # customer selection (Notebook 08)
-notebook               # Jupyter, to open and run the notebooks
+notebook==7.6.3        # Jupyter, to open and run the notebooks (includes nbconvert)

@@ -497,9 +497,21 @@ Approved scope for Notebook 08 (2026-10-29):
     rank 1, a typed lowercase prefix, an unmatched ID and an ambiguous prefix. All
     checks printed True, with no errors.
   - Notebook 06 result files are byte-identical (SHA-256) before and after.
-- **Final review (2026-10-29), in progress:** `README.md` and `requirements.txt` added.
-  Notebook 01–02 title cells were renamed to MeterTrace (markdown only). A fresh-clone
-  reproduction test is running.
+- **Final review (2026-10-29), awaiting team approval before any merge into `main`:**
+  - Added `README.md` (recruiter-facing; every metric is checked against
+    `06_test_metrics.csv`) and `requirements.txt` (pinned tested versions, Python 3.13).
+  - Renamed only the markdown title cells of Notebooks 01–02 to MeterTrace; their code and
+    outputs are unchanged.
+  - Added `data/download/` to `.gitignore`.
+  - Dataset download uses `raw.githubusercontent.com` URLs. The split archive is extracted
+    with a standard-library Python snippet in the README, because `unzip`, `zip -s 0` and
+    `zip -FF` all fail on it.
+  - **Fresh-clone test:** clone from GitHub, new venv from `requirements.txt`, README
+    download and extract steps, checksum OK, then all 8 notebooks via `nbconvert` (342 s,
+    0 errors).
+    - 14 of 16 result files were byte-identical, including all `06_*` files; the other two
+      differ only in training time.
+    - Not tested: Windows, macOS, Colab, GPU, and Notebook 08 widgets clicked in a browser.
 - Outputs folder: figures go to `outputs/figures/`, metric tables to
   `outputs/results/`. Notebook file names use the `NN_Title_Case.ipynb` style
   (Section 4).

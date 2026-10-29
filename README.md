@@ -284,7 +284,8 @@ evidence.*
 ### Requirements
 - **Python 3.13** (the version we tested; see [Reproducibility](#reproducibility)).
 - About 2 GB of free disk space for packages, the dataset and the processed files.
-- A CPU is enough, and no GPU is needed. The whole pipeline ran in about 7 minutes on a 4-core machine.
+- A CPU is enough, and no GPU is needed. All eight notebooks ran in about 6 minutes on a 4-core machine.
+  Installing the packages took about 9 minutes, most of it downloading TensorFlow.
 - Exact package versions are in [`requirements.txt`](requirements.txt):
 
 | Package | Version |
@@ -298,7 +299,7 @@ evidence.*
 | tensorflow (includes Keras 3) | 2.21.0 |
 | shap | 0.54.1 |
 | ipywidgets | 8.1.9 |
-| notebook | any recent version (not pinned yet) |
+| notebook | 7.6.3 |
 
 ### 1. Clone the repository and install the packages
 ```bash
@@ -424,7 +425,32 @@ All of these paths are listed in [`.gitignore`](.gitignore). The small result ta
 ---
 
 ## Reproducibility
-*A fresh-clone reproduction test is in progress; this section will report exactly what was rerun.*
+All random seeds are fixed (42), and TensorFlow runs with deterministic operations. Re-running the notebooks
+with the pinned versions therefore reproduces the committed numbers exactly.
+
+**Fresh-clone test (performed on 2026-10-29, Linux, 4 CPU cores, no GPU, Python 3.13.17):**
+1. Cloned this repository from GitHub into an empty folder. There was no `data/` or `models/` folder.
+2. Created a new virtual environment and installed **only** `requirements.txt`.
+3. Downloaded the three archive parts with the `curl` commands above, extracted `data.csv` with the snippet
+   above, and confirmed the SHA-256 checksum.
+4. Ran all eight notebooks with the `nbconvert` loop above. **All eight completed without errors** in
+   342 s in total:
+
+| Notebook | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 |
+|---|---|---|---|---|---|---|---|---|
+| Runtime (s) | 38 | 62 | 27 | 9 | 82 | 14 | 98 | 12 |
+
+5. Compared the regenerated `outputs/results/` files with the committed ones:
+   - 14 of 16 files were **byte-identical**, including all three Notebook 06 files (test metrics, test
+     scores, frozen thresholds).
+   - The other two (`04_validation_metrics.csv`, `05_validation_metrics.csv`) differed **only** in their
+     training-time columns.
+
+**Not tested by us:**
+- Windows, macOS, Google Colab, GPUs, and Python versions other than 3.13. Notebook 01 was additionally run
+  with pandas 2.2.
+- Clicking through the Notebook 08 widgets in a browser. Its selection paths were checked by executing the
+  notebook with each example customer, a typed ID, and invalid or ambiguous IDs.
 
 ---
 

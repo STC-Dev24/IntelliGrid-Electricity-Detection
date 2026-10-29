@@ -1,6 +1,7 @@
 # Raw and processed data are large and never committed
 data/raw/
 data/processed/
+data/download/
 
 # Jupyter / Python
 .ipynb_checkpoints/
