@@ -5,3 +5,4 @@ data/processed/
 # Jupyter / Python
 .ipynb_checkpoints/
 __pycache__/
+models/

@@ -1,0 +1,6 @@
+Model,Branch,Validation ROC-AUC,Validation PR-AUC,Training time (s)
+Logistic Regression,Supervised,0.7216,0.2377,0.0616
+Random Forest,Supervised,0.7628,0.3268,1.7017
+Isolation Forest,Unsupervised,0.5863,0.147,0.2423
+Average consumption alone,Reference (no training),0.6671,0.1897,
+Random ranking,Reference,0.5,0.085,

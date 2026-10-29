@@ -212,7 +212,7 @@ one needs.
 | 01 | `01_Data_Understanding_EDA.ipynb` | Load, sort dates, profile missing values / zeros / outliers / imbalance / trends, glitch day, baseline floor (exploratory only) | `data/raw/` | `outputs/figures/01_*` (no modelling artefacts) |
 | 02 | `02_Data_Preprocessing.ipynb` | Sort dates, insert 18 Sep 2016, 3 Oct 2014 → NaN, record missingness, identical-history groups, group-aware stratified split (D9–D11), train-derived cap (D12), weekly aggregation + per-customer imputation (D13), log1p + train-fitted scaling (D14) | raw file | `data/processed/customers.csv`, `daily_clean.parquet`, `weekly_{train,validation,test}.npz`, `preprocessing_params.json`; `outputs/results/02_*` |
 | 03 | `03_Feature_Engineering.ipynb` | 11 per-customer features from observed daily readings (D15) | `daily_clean.parquet`, `customers.csv`, `weekly_*.npz` (row order) | `data/processed/features_{train,validation,test}.parquet`, `features_metadata.json`; `outputs/results/03_*` |
-| 04 | `04_Classical_Baselines.ipynb` | LR + RF (supervised), Isolation Forest (unsupervised, normal training customers only, D5) on features; validation metrics only | NB03 features | `models/*.joblib`, validation scores |
+| 04 | `04_Machine_Learning_Baselines.ipynb` | LR + RF (supervised), Isolation Forest (unsupervised, normal training customers only, D5) on the 11 features (D16); validation metrics only; **test file not loaded** | `features_{train,validation}.parquet`, `features_metadata.json` | `models/*.joblib` (git-ignored), `outputs/results/04_validation_scores.csv`, `04_validation_metrics.csv`, `04_logistic_regression_coefficients.csv` |
 | 05 | `05_Deep_Learning_Models.ipynb` | LSTM on weekly sequences (labels); dense autoencoder on normal training customers; validation metrics only | NB02 sequences | `models/*.keras`, training histories, validation scores |
 | 06 | `06_Evaluation.ipynb` | Choose thresholds on validation (one rule per group), then score test **once**; all metrics + plots | all models, val/test data | `outputs/results/*.csv`, test scores, figures |
 | 07 | `07_Explainability_Risk.ipynb` | RF feature importance + SHAP; autoencoder reconstruction-error breakdown by period; flagged customers' histories | saved models + scores | figures, risk table |
@@ -223,7 +223,7 @@ Planned repository layout:
 notebooks/            01_… to 08_… .ipynb
 data/raw/             SGCC file (git-ignored)
 data/processed/       intermediate arrays/parquet (git-ignored)
-models/               saved models, imputer, scaler (git-ignored unless small)
+models/               saved models (git-ignored; re-created by NB04/NB05)
 outputs/figures/      PNG figures
 outputs/results/      metric CSVs written by notebooks
 CLAUDE.md, README.md, requirements.txt, .gitignore
@@ -308,6 +308,18 @@ Approved scope for Notebook 03 (2026-10-29):
   - Nothing is fitted. `FLAG` is stored as the last column, but models must select
     inputs with `feature_columns` from `features_metadata.json`.
 
+Approved scope for Notebook 04 (2026-10-29):
+- **D16 — Baselines.**
+  - Logistic Regression: `Pipeline(StandardScaler, LogisticRegression(class_weight=
+    "balanced", max_iter=1000, random_state=42))`.
+  - Random Forest: `RandomForestClassifier(n_estimators=100, class_weight=
+    "balanced_subsample", random_state=42)`.
+  - Isolation Forest: `IsolationForest(n_estimators=100, random_state=42)`, fitted on
+    normal training customers only. Anomaly score = `-score_samples` (higher = more
+    suspicious).
+  - No hyperparameter search and no thresholds. Notebook 06 loads the saved models,
+    picks thresholds on `04_validation_scores.csv`, and scores the test set once.
+
 ## 7. Status
 - Present in the repository: both PDFs (MeterTrace.pdf is official), this file, `.gitignore`, Notebooks 01–02,
   their figures, and `outputs/results/02_*`.
@@ -378,7 +390,7 @@ Approved scope for Notebook 03 (2026-10-29):
   - 148 weeks; 24.32% of weekly values imputed; log1p mean/std = 1.6018 / 1.1036.
   - **Later notebooks must load `data/processed/customers.csv` (the split) and
     `preprocessing_params.json`; never re-split or refit these.**
-- **NB03 complete (2026-10-29), awaiting team approval.**
+- **NB03 (details):**
   `notebooks/03_Feature_Engineering.ipynb` executed end to end in about 30 seconds.
   - Shapes: `features_train` 29,657 × 12, `features_validation` 6,354 × 12,
     `features_test` 6,356 × 12 (11 features + `FLAG`).
@@ -390,7 +402,18 @@ Approved scope for Notebook 03 (2026-10-29):
     `mean_kwh` 0.653, `consumption_change` 0.616.
   - Highly overlapping pairs: `zero_ratio` / `longest_zero_run_days` (Spearman 0.98),
     `mean_kwh` / `median_kwh` (0.96), `std_kwh` / `max_kwh` (0.95).
-- Missing: notebooks 04–08, `README.md`, `requirements.txt`.
+- **NB03 approved by the team (2026-10-29).**
+- **NB04 complete (2026-10-29), awaiting team approval.**
+  `notebooks/04_Machine_Learning_Baselines.ipynb` executed end to end with no
+  warnings; the test file was not loaded. Validation results:
+  - Logistic Regression: ROC-AUC 0.7216, PR-AUC 0.2377 (train ROC-AUC 0.7310).
+  - Random Forest: ROC-AUC 0.7628, PR-AUC 0.3268 (train ROC-AUC 1.0000, memorised).
+  - Isolation Forest: ROC-AUC 0.5863, PR-AUC 0.1470.
+  - References on validation: average consumption alone 0.6671 / 0.1897; random
+    0.5 / 0.0850.
+  - Models are in `models/` (git-ignored; re-run NB04 to recreate them). The Random
+    Forest file is about 10 MB.
+- Missing: notebooks 05–08, `README.md`, `requirements.txt`.
 - Outputs folder: figures go to `outputs/figures/`, metric tables to
   `outputs/results/`. Notebook file names use the `NN_Title_Case.ipynb` style
   (Section 4).

@@ -1,0 +1,12 @@
+,coefficient (per 1 std),odds multiplier (per 1 std)
+std_kwh,1.443,4.232
+consumption_change,0.256,1.291
+missing_ratio,0.225,1.253
+spike_frequency,0.206,1.229
+mean_kwh,0.181,1.199
+drop_frequency,0.104,1.11
+longest_zero_run_days,-0.037,0.963
+median_kwh,-0.079,0.924
+volatility,-0.128,0.88
+zero_ratio,-0.169,0.845
+max_kwh,-0.555,0.574
