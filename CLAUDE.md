@@ -46,7 +46,8 @@ features or steps it does not describe unless the team approves them first.
   notebook.
 - **Row-wise operations** (they use only one customer's own readings) may be applied
   to all customers: sorting dates, setting the 3 Oct 2014 glitch to NaN, per-customer
-  capping, per-customer interpolation, and per-customer feature calculation.
+  interpolation, and per-customer feature calculation. Outlier caps are **not**
+  per-customer: see the Decisions log (D2).
 - **Any statistic computed across customers** must be fitted on **training customers
   only** and then applied to validation and test. This covers imputers, scalers,
   global caps or percentiles, and class weights.
@@ -95,7 +96,8 @@ Known traps, to be handled in Notebooks 01–02:
 2. **All theft customers come first.** Shuffle before splitting and training.
 3. **System-wide glitch on 3 Oct 2014**: the median reading jumps from 4.5 to 144 kWh.
    Set this day to NaN for every customer.
-4. **Extreme readings** reach 800,003 kWh in a single day. Cap them.
+4. **Extreme readings** reach 800,003 kWh in a single day. Investigate them first,
+   and cap only if that is justified, using thresholds from training customers (D2).
 5. **Missingness is time-dependent** because meters came online over time.
 6. **The weekly cycle is weak** and theft customers are no less regular than normal
    ones. Do not claim that theft "breaks a weekly rhythm".
@@ -146,7 +148,8 @@ unsupervised models.
 
 ### Metrics (Notebook 06)
 Precision, recall, F1, ROC-AUC, PR-AUC, false-positive rate, confusion matrix, and
-**precision among the top-ranked customers** (precision@k, the inspection-budget view).
+**precision among the top-ranked customers**: Precision@100 and Precision@500 on the
+test set (the inspection-budget view, D6).
 Accuracy is not used as a headline metric.
 
 ---
@@ -159,9 +162,9 @@ one needs.
 | NB | File | Does | Reads | Writes |
 |---|---|---|---|---|
 | 01 | `01_data_understanding_eda.ipynb` | Load, sort dates, profile missing values / zeros / outliers / imbalance / trends, glitch day, baseline floor (exploratory only) | `data/raw/` | `reports/figures/01_*` (no modelling artefacts) |
-| 02 | `02_preprocessing.ipynb` | Fix column order (insert 18 Sep 2016 as NaN), glitch → NaN, cap, stratified customer split, interpolate short gaps, train-fitted imputer, weekly aggregation, train-fitted scaling | raw file | `data/processed/` cleaned daily matrix, split IDs, weekly sequences per split, fitted imputer/scaler (`models/preprocessing/`) |
-| 03 | `03_feature_engineering.ipynb` | Per-customer features: mean, spread, zero-day ratio, longest zero run, sudden drops and spikes, volatility, change from own baseline | NB02 outputs | `data/processed/features_{train,val,test}.parquet` |
-| 04 | `04_classical_baselines.ipynb` | LR + RF (supervised), Isolation Forest (unsupervised) on features; validation metrics only | NB03 features | `models/*.joblib`, validation scores |
+| 02 | `02_preprocessing.ipynb` | Fix column order (insert 18 Sep 2016 as NaN), glitch → NaN, stratified customer split, train-derived caps if justified (D2), interpolate short gaps, train-fitted imputer, weekly aggregation, train-fitted scaling | raw file | `data/processed/` cleaned daily matrix, split IDs, weekly sequences per split, fitted imputer/scaler (`models/preprocessing/`) |
+| 03 | `03_feature_engineering.ipynb` | Per-customer features: mean, spread, zero-day ratio, longest zero run, sudden drops and spikes, volatility, change from own baseline, missing-reading ratio (D4) | NB02 outputs | `data/processed/features_{train,val,test}.parquet` |
+| 04 | `04_classical_baselines.ipynb` | LR + RF (supervised), Isolation Forest (unsupervised, normal training customers only, D5) on features; validation metrics only | NB03 features | `models/*.joblib`, validation scores |
 | 05 | `05_deep_learning_models.ipynb` | LSTM on weekly sequences (labels); dense autoencoder on normal training customers; validation metrics only | NB02 sequences | `models/*.keras`, training histories, validation scores |
 | 06 | `06_evaluation.ipynb` | Choose thresholds on validation (one rule per group), then score test **once**; all metrics + plots | all models, val/test data | `reports/results/*.csv`, test scores, figures |
 | 07 | `07_explainability_risk.ipynb` | RF feature importance + SHAP; autoencoder reconstruction-error breakdown by period; flagged customers' histories | saved models + scores | figures, risk table |
@@ -190,10 +193,38 @@ CLAUDE.md, README.md, requirements.txt, .gitignore
   before implementation, and then recorded in the "Decisions log" below.
 
 ## 6. Decisions log
-_(Empty. Add each approved decision here with its date.)_
+Approved by the team on 2026-10-29, along with the plan in Section 4. These decisions
+override any conflicting wording earlier in this file.
+
+- **D1 — Split.** 70/15/15 stratified (on `FLAG`) customer-level
+  train/validation/test split, `RANDOM_STATE = 42`. Done once in NB02; the IDs are
+  saved and reused everywhere.
+- **D2 — Outliers.** Investigate extreme readings (NB01/NB02) before any capping. If
+  capping is justified, derive the threshold(s) from **training customers only** and
+  apply them unchanged to validation and test. Document the evidence and the chosen
+  rule in the notebook. The 3 Oct 2014 glitch day is still set to NaN.
+- **D3 — Missingness.** Preserve missingness information: compute missingness-based
+  quantities from the raw (pre-imputation) data. Handle long gaps with documented,
+  leakage-safe imputation; anything learned across customers is fitted on training
+  customers only.
+- **D4 — Missing-reading ratio** is an engineered feature (NB03), in addition to the
+  report's list.
+- **D5 — Isolation Forest** is trained on **normal-labelled training customers only**,
+  the same population as the autoencoder.
+- **D6 — Thresholds and ranking.** Classification and anomaly thresholds are selected
+  on validation data only. Report **Precision@100** and **Precision@500** on the
+  held-out test set; neither is tuned on test.
+- **D7 — Data.** Use the original SGCC dataset only. No synthetic data and no
+  fabricated results. If the dataset is unavailable, stop and report the blocker.
+- **D8 — Notebook 01.** If the team's earlier NB01 cells are unavailable, recreate
+  the EDA notebook from the report and the actual dataset.
+- **Branching.** Work on the feature branch; do not modify or merge `main` without
+  explicit approval.
 
 ## 7. Status
-- Present in the repository: the report PDF only.
+- Present in the repository: the report PDF and this file.
+- 2026-10-29: SGCC dataset **not present** in the working environment (blocker for
+  Phase 1, see D7).
 - Missing: dataset (to be placed in `data/raw/`), all 8 notebooks (the report says
   early Notebook 01 cells were written, but they are not in the repository),
   `README.md`, `requirements.txt`, `.gitignore`, folder structure.
