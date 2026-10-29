@@ -7,6 +7,34 @@ features or steps it does not describe unless the team approves them first.
 
 ---
 
+## 0. Project scope (team instruction, 2026-10-29)
+This is a **small-to-medium undergraduate deep learning project**, not a production or
+enterprise system. Priorities, in order:
+1. Correctness
+2. Simplicity
+3. Understanding and learning
+4. A working end-to-end implementation
+5. Good presentation and GitHub documentation
+
+Keep all **five models** and **eight notebooks** promised in the report, but implement
+them as simply as possible.
+
+Avoid:
+- overengineering and complicated abstractions;
+- excessive feature engineering;
+- large hyperparameter searches;
+- additional models;
+- databases, APIs and web backends;
+- unnecessary dependencies.
+
+Use simple architectures, readable cells and clear explanations. If something is
+optional and does not materially improve the project, skip it.
+
+Every notebook ends with a short section titled **"What We Learned"**, which explains
+the key concepts students should understand for their viva.
+
+---
+
 ## 1. Development rules (strict)
 
 ### Code style
@@ -71,7 +99,7 @@ features or steps it does not describe unless the team approves them first.
   or from a results file that a notebook wrote.
 - If a cell fails, a model underperforms or a run was not executed, say so plainly.
 - Commit notebooks **with their outputs**, so every reported number can be traced.
-- Metric tables are written to disk by code (`reports/results/*.csv`), not typed by
+- Metric tables are written to disk by code (`outputs/results/*.csv`), not typed by
   hand.
 - The figures in the report (for example ROC-AUC 0.66 for average consumption, or the
   missing-value percentages) are the team's earlier findings. Re-derive them in the
@@ -161,14 +189,14 @@ one needs.
 
 | NB | File | Does | Reads | Writes |
 |---|---|---|---|---|
-| 01 | `01_data_understanding_eda.ipynb` | Load, sort dates, profile missing values / zeros / outliers / imbalance / trends, glitch day, baseline floor (exploratory only) | `data/raw/` | `reports/figures/01_*` (no modelling artefacts) |
-| 02 | `02_preprocessing.ipynb` | Fix column order (insert 18 Sep 2016 as NaN), glitch → NaN, stratified customer split, train-derived caps if justified (D2), interpolate short gaps, train-fitted imputer, weekly aggregation, train-fitted scaling | raw file | `data/processed/` cleaned daily matrix, split IDs, weekly sequences per split, fitted imputer/scaler (`models/preprocessing/`) |
-| 03 | `03_feature_engineering.ipynb` | Per-customer features: mean, spread, zero-day ratio, longest zero run, sudden drops and spikes, volatility, change from own baseline, missing-reading ratio (D4) | NB02 outputs | `data/processed/features_{train,val,test}.parquet` |
-| 04 | `04_classical_baselines.ipynb` | LR + RF (supervised), Isolation Forest (unsupervised, normal training customers only, D5) on features; validation metrics only | NB03 features | `models/*.joblib`, validation scores |
-| 05 | `05_deep_learning_models.ipynb` | LSTM on weekly sequences (labels); dense autoencoder on normal training customers; validation metrics only | NB02 sequences | `models/*.keras`, training histories, validation scores |
-| 06 | `06_evaluation.ipynb` | Choose thresholds on validation (one rule per group), then score test **once**; all metrics + plots | all models, val/test data | `reports/results/*.csv`, test scores, figures |
-| 07 | `07_explainability_risk.ipynb` | RF feature importance + SHAP; autoencoder reconstruction-error breakdown by period; flagged customers' histories | saved models + scores | figures, risk table |
-| 08 | `08_interactive_demo.ipynb` | Investigation view: choose a test customer → consumption, theft probability, anomaly score, unusual periods (saved models only, no retraining) | saved models + scores | none |
+| 01 | `01_Data_Understanding_EDA.ipynb` | Load, sort dates, profile missing values / zeros / outliers / imbalance / trends, glitch day, baseline floor (exploratory only) | `data/raw/` | `outputs/figures/01_*` (no modelling artefacts) |
+| 02 | `02_Preprocessing.ipynb` | Fix column order (insert 18 Sep 2016 as NaN), glitch → NaN, stratified customer split, train-derived caps if justified (D2), interpolate short gaps, train-fitted imputer, weekly aggregation, train-fitted scaling | raw file | `data/processed/` cleaned daily matrix, split IDs, weekly sequences per split, fitted imputer/scaler (`models/preprocessing/`) |
+| 03 | `03_Feature_Engineering.ipynb` | Per-customer features: mean, spread, zero-day ratio, longest zero run, sudden drops and spikes, volatility, change from own baseline, missing-reading ratio (D4) | NB02 outputs | `data/processed/features_{train,val,test}.parquet` |
+| 04 | `04_Classical_Baselines.ipynb` | LR + RF (supervised), Isolation Forest (unsupervised, normal training customers only, D5) on features; validation metrics only | NB03 features | `models/*.joblib`, validation scores |
+| 05 | `05_Deep_Learning_Models.ipynb` | LSTM on weekly sequences (labels); dense autoencoder on normal training customers; validation metrics only | NB02 sequences | `models/*.keras`, training histories, validation scores |
+| 06 | `06_Evaluation.ipynb` | Choose thresholds on validation (one rule per group), then score test **once**; all metrics + plots | all models, val/test data | `outputs/results/*.csv`, test scores, figures |
+| 07 | `07_Explainability_Risk.ipynb` | RF feature importance + SHAP; autoencoder reconstruction-error breakdown by period; flagged customers' histories | saved models + scores | figures, risk table |
+| 08 | `08_Interactive_Demo.ipynb` | Investigation view: choose a test customer → consumption, theft probability, anomaly score, unusual periods (saved models only, no retraining) | saved models + scores | none |
 
 Planned repository layout:
 ```
@@ -176,8 +204,8 @@ notebooks/            01_… to 08_… .ipynb
 data/raw/             SGCC file (git-ignored)
 data/processed/       intermediate arrays/parquet (git-ignored)
 models/               saved models, imputer, scaler (git-ignored unless small)
-reports/figures/      PNG figures
-reports/results/      metric CSVs written by notebooks
+outputs/figures/      PNG figures
+outputs/results/      metric CSVs written by notebooks
 CLAUDE.md, README.md, requirements.txt, .gitignore
 ```
 
@@ -222,7 +250,7 @@ override any conflicting wording earlier in this file.
   explicit approval.
 
 ## 7. Status
-- Present in the repository: the report PDF, this file and `.gitignore`.
+- Present in the repository: the report PDF, this file, `.gitignore`, Notebook 01 and its figures.
 - **Dataset (2026-10-29):** `data/raw/data.csv` (git-ignored, read-only, never
   modified).
   - Source: https://github.com/henryRDlab/ElectricityTheftDetection, commit `8db682e`.
@@ -241,7 +269,8 @@ override any conflicting wording earlier in this file.
   - Missing readings: 25.64% overall, 31.47% for theft and 25.10% for normal
     customers. By year: 35.29% (2014), 35.99% (2015) and 1.62% (2016).
   - The cross-customer median is 144 kWh on 2014-10-03, against 4.48 on the day
-    before; no other day exceeds 50 kWh.
+    before; no other day exceeds 50 kWh. NB01 found that this median is based on only
+    15 readings; see below.
   - Maximum reading: 800,003.32 kWh, on 2014-10-10.
   - Overall median reading: 4.59 kWh.
   - Mean consumption scored as a theft predictor gives ROC-AUC 0.657 on the whole
@@ -254,5 +283,30 @@ override any conflicting wording earlier in this file.
     entirely NaN.
   - 5 of the duplicate groups have conflicting labels.
   - No negative readings.
-- Missing: all 8 notebooks (the earlier NB01 cells are unavailable, so NB01 will be
-  recreated per D8), `README.md`, `requirements.txt`.
+- **NB01 complete (2026-10-29), awaiting team approval.**
+  `notebooks/01_Data_Understanding_EDA.ipynb` was recreated per D8 and executed
+  end to end, with figures in `outputs/figures/01_*.png`. It ran identically under
+  pandas 3.1 and pandas 2.2 (Colab). Key findings:
+  - **Correction to the report.** 3 Oct 2014 is a *nearly empty day*, not a
+    system-wide spike: only 15 of 42,372 customers have a reading, and **all 15 are
+    labelled theft** (a label-leak risk). The 144 kWh median is the median of those
+    15 readings, which come mostly from large consumers. Set the day to NaN for
+    everyone before computing any feature.
+  - 72.4% of missing cells come before a customer's first reading. Missingness drops
+    in a sudden step on 1 Jan 2016, and 9,322 customers' first reading is in 2016 Q1.
+  - Zeros are more common for *normal* customers: 18.25% vs 12.13% of observed
+    readings. 2,076 normal and 33 theft customers read zero on every observed day.
+  - Theft customers consume *more*: the median per-customer average is 8.80 vs 5.47
+    kWh/day, and the gap grows each year. The weekly cycle is flat (within ±1.5%) for
+    both classes.
+  - Extreme readings are mostly isolated spikes; the whole-dataset 99.99th percentile
+    is 1,954.05 kWh. Some genuinely large consumers exist.
+  - Exploratory whole-dataset ROC-AUC of average consumption: 0.6566.
+  - Recommended (counted, not applied) for NB02: drop the 5 empty customers, drop the
+    5 contradictory-label groups, and keep one copy per remaining identical group,
+    all before the split. That gives 41,489 customers (3,597 theft, 37,892 normal).
+    **These are proposals, not approved decisions.**
+- Missing: notebooks 02–08, `README.md`, `requirements.txt`.
+- Outputs folder: figures go to `outputs/figures/`, metric tables to
+  `outputs/results/`. Notebook file names use the `NN_Title_Case.ipynb` style
+  (Section 4).
